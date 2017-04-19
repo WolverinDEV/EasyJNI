@@ -1,0 +1,1 @@
+/usr/bin/c++  -fPIC  -std=c++11 -fpermissive -g  -shared -Wl,-soname,libEasyJNITest.so -o libEasyJNITest.so CMakeFiles/EasyJNITest.dir/test/JNIImpl.cpp.o libEasyJNI.so -Wl,-rpath,/home/wolverindev/git/EasyJNI/EasyJNI-C/cmake-build-debug 

@@ -1,0 +1,5 @@
+/home/wolverindev/git/EasyJNI/EasyJNI-C/cmake-build-debug/CMakeFiles/edit_cache.dir
+/home/wolverindev/git/EasyJNI/EasyJNI-C/cmake-build-debug/CMakeFiles/EasyJNITest.dir
+/home/wolverindev/git/EasyJNI/EasyJNI-C/cmake-build-debug/CMakeFiles/EasyJNI.dir
+/home/wolverindev/git/EasyJNI/EasyJNI-C/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/home/wolverindev/git/EasyJNI/EasyJNI-C/cmake-build-debug/CMakeFiles/EasyJNIExec.dir
