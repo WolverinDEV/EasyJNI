@@ -56,7 +56,7 @@ class JavaMethodeInfo {
                 id = env->GetMethodID(klass->getJavaClass(), name.c_str(), getSignature().c_str());
             }
             if(id) return id;
-            throw EasyJNI::JNIException("Cant find methode "+name+" with signature "+getSignature());
+            throw EasyJNI::JNIException("Cant find "+string(_static ? "static" : "instance")+" methode "+name+" with signature "+getSignature()+" for class "+klass->package+"."+klass->name);
         }
 };
 
@@ -102,7 +102,19 @@ struct JavaMethode {
             return info;
         };
 
+        JavaMethode(JavaClass* klassInstance, JavaMethodeInfoImpl<ReturnType, Args...>* mInfo){
+            this->info = mInfo;
+            this->klassInstance = klassInstance;
+        }
+
         ReturnType call(Args... args){
+            //XY<uint8_t>::TY;
+            static constexpr uint8_t nargs = sizeof...(Args);
+            auto env = EasyJNI::Utils::getJNIEnvAttach();
+            JNIParamDestructor<nargs> paramDestructor(env);
+            return JNIMethodeInvoker<ReturnType, decltype(CPPToJNIConversor<Args>::convert(args))...>::callStatic(this, JNIParamConversor<Args>(args, paramDestructor)...);
+
+
             return JNIMethodeInvoker<ReturnType, Args...>::callInstance(this, args...);
         }
 

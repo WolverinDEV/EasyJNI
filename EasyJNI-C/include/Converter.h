@@ -48,18 +48,10 @@ template <typename C1, typename ...C> struct Concatenate<C1,C...>{
 
 #pragma mark C++ To JNI conversion templates
 
-template <typename ...T>
-struct TType {};
-
-template <typename T> struct TType<T> {
-    using Type = T;
-};
-
 //default template
 template<typename T>
 struct CPPToJNIConversor {
     inline static T convert(T obj);
-    using Type = decltype(TType<T>::Type);
 };
 
 /*
@@ -233,4 +225,80 @@ inline const char * getJNISignature(Args...) {
             typename CPPToJNIConversor<T>::JNIType,
             CompileTimeString<'\0'>> //return type signature
     ::Result::value();
+}
+
+
+
+#pragma mark JNI Param Destructor Templates
+
+//Helper object to destroy parameters converter to JNI
+template <uint8_t NUM_PARAMS>
+struct JNIParamDestructor {
+    JNIEnv* jniEnv;
+    jobject jniParams[NUM_PARAMS] = {0};
+    int currentIndex;
+
+    JNIParamDestructor(JNIEnv * env): jniEnv(env), currentIndex(0) {
+
+    }
+
+    void add(jobject jniObject) {
+        jniParams[currentIndex++] = jniObject;
+    }
+
+    ~JNIParamDestructor() {
+        for (int i = 0; i< NUM_PARAMS; ++i) {
+            if (jniParams[i])
+                jniEnv->DeleteLocalRef(jniParams[i]);
+        }
+//TODO        JNI_EXCEPTION_CHECK
+    }
+};
+
+//optimized base case for the destructor
+template<>
+struct JNIParamDestructor<0> {
+    JNIParamDestructor(JNIEnv * env) {}
+    ~JNIParamDestructor() {
+//TODO        JNI_EXCEPTION_CHECK
+    }
+};
+
+
+//helper template to decide when a jni type must be destroyed (by adding the ref to the JNIParamDestructor struct);
+template<typename T, typename D>
+struct JNIDestructorDecider {
+    //by default the template ignores destruction (for primivitve types)
+    inline static void decide(T jniParam, D & destructor) {}
+};
+
+template<typename D>
+struct JNIDestructorDecider<jobject,D> {
+    inline static void decide(jobject obj, D & destructor) {destructor.add(obj);}
+};
+
+template<typename D>
+struct JNIDestructorDecider<jbyteArray,D> {
+    inline static void decide(jbyteArray obj, D & destructor) {destructor.add((jobject)obj);}
+};
+
+template<typename D>
+struct JNIDestructorDecider<jobjectArray,D> {
+    inline static void decide(jobjectArray obj, D & destructor) {destructor.add((jobject)obj);}
+};
+
+template<typename D>
+struct JNIDestructorDecider<jstring,D> {
+    inline static void decide(jstring obj, D & destructor) {destructor.add((jobject)obj);}
+};
+
+#pragma mark JNI Param Conversor Utility Template
+
+//JNI param conversor helper: Converts the parameter to JNI and adds it to the destructor if needed
+template <typename T, typename D>
+auto JNIParamConversor(const T & arg, D & destructor) -> decltype(CPPToJNIConversor<T>::convert(arg))
+{
+    auto result = CPPToJNIConversor<T>::convert(arg);
+    JNIDestructorDecider<decltype(CPPToJNIConversor<T>::convert(arg)),D>::decide(result, destructor);
+    return result;
 }

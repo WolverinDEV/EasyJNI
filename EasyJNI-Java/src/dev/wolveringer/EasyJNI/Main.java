@@ -6,7 +6,7 @@ public class Main {
 	public static void main(String[] args) {
 		EasyJNI.inizalisize();
 		
-		System.load("/home/wolverindev/git/EasyJNI/EasyJNI-C/cmake-build-debug/libEasyJNITest.so");
+		System.load(EasyJNI.EasyJNI_LibaryPath+"/libEasyJNITest.so");
 		
 		TestStaticFields.printValues();
 		runNativeTests();

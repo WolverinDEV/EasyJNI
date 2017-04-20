@@ -2,7 +2,7 @@ package dev.wolveringer.EasyJNI;
 
 public class EasyJNI {
 	private static final String EasyJNI_LibaryName = "libEasyJNI.so";
-	private static final String EasyJNI_LibaryPath = "/home/wolverindev/git/EasyJNI/EasyJNI-C/cmake-build-debug/";
+	public static final String EasyJNI_LibaryPath = "/home/wolverindev/.CLion2016.2/system/cmake/generated/EasyJNI-edd72901/edd72901/Debug/";
 	
 	private static int inizalisizeState = -1;
 	

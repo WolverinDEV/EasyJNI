@@ -26,3 +26,17 @@ JFT_PRIMATIVE(jlong , Long)
 
 JFT_PRIMATIVE(jdouble , Double)
 JFT_PRIMATIVE(jfloat , Float)
+
+JFT_PRIMATIVE(jobject, Object)
+//type, setStaticFn, getStaticFn, setInstanceFn, getInstanceFn
+
+//TODO Imprtant delete JavaClass instance
+JFT(JavaClass*,
+    return JavaFieldActor<jobject>::setStatic(field, val->getJavaInstance());
+    ,
+    return new JavaClass(field->getClassInfo(), JavaFieldActor<jobject>::getStatic(field));
+    ,
+    return JavaFieldActor<jobject>::setInstance(field, val->getJavaInstance());
+    ,
+    return new JavaClass(field->getFieldInfo()->getClassInfo(), JavaFieldActor<jobject>::getInstance(field));
+)

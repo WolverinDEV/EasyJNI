@@ -13,13 +13,13 @@ JNI_CLASS(dev_wolveringer_EasyJNI_test, TestStaticCalls,
 )
 
 JNI_CLASS(dev_wolveringer_EasyJNI_test, TestStaticFields,
-          JNI_STATIC_FIELD(bool, changeMe, static_changeMe);
-          JNI_STATIC_FIELD(bool, changeMeTo22, static_changeMeTo22);
+          JNI_STATIC_FIELD(bool, ChangeMe, static_changeMe);
+          JNI_STATIC_FIELD(int, ChangeMeTo22, static_changeMeTo22);
 
 )
 
 JNI_CLASS(dev_wolveringer_EasyJNI_test, TestInstanceCalls,
-          JNI_CLASS_METHODE(b)
+          JNI_CLASS_METHODE(callMe, callMe, jboolean);
 )
 
 void testMethode(JNIEnv *env, jclass klass){
@@ -34,8 +34,12 @@ void testMethode(JNIEnv *env, jclass klass){
     dev_wolveringer_EasyJNI_test_TestStaticFields::static_changeMe()->set(!dev_wolveringer_EasyJNI_test_TestStaticFields::static_changeMe()->get());
     dev_wolveringer_EasyJNI_test_TestStaticFields::static_changeMeTo22()->set(22);
 
-    dev_wolveringer_EasyJNI_test_TestInstanceCalls instance(nullptr, nullptr);
-    instance->
+    auto clInstance = env->AllocObject(dev_wolveringer_EasyJNI_test_TestInstanceCalls::ClassInfo->getJavaClass());
+    clInstance = env->NewWeakGlobalRef(clInstance);
+
+    dev_wolveringer_EasyJNI_test_TestInstanceCalls instance(dev_wolveringer_EasyJNI_test_TestInstanceCalls::ClassInfo, clInstance);
+    printf("Name: %s", instance.callMe.info->name.c_str());
+    instance.callMe();
 }
 
 extern "C" {

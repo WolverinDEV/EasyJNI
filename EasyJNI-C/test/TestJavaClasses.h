@@ -81,11 +81,11 @@ private:                                                                        
 
 #define JNI_CLASS_METHODE(name, fnName, retType, arguments...) \
     public: \
-        JavaMethode<retType, ##arguments> fnName = JavaMethode<retType, ##arguments>(info(), this);
+        JavaMethode<retType, ##arguments> fnName = JavaMethode<retType, ##arguments>(this, info()->getMethode<retType, ##arguments>(STRINGIZE(name))); \
     private: \
-        __attribute__((constructor)) static void registerMethode_##fnName() { \
-            info()->registerMethode<retType, ##arguments>(STRINGIZE(name), true);\
-}
+        __attribute__((constructor)) static void registerClassMethode_##fnName() { \
+            info()->registerMethode<retType, ##arguments>(STRINGIZE(name), false);\
+        }
 
 
 #define STATIC_VOID() \

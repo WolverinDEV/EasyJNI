@@ -46,8 +46,8 @@ class JavaFieldInfoImpl;
 
 template <typename T>
 struct JavaFieldActor {
-    static T getStatic(JavaFieldInfo* field);
-    static bool setStatic(JavaFieldInfo* field,T val);
+    static T getStatic(JavaFieldInfoImpl<T>* field);
+    static bool setStatic(JavaFieldInfoImpl<T>* field,T val);
 
     static T getInstance(JavaField<T>* field);
     static bool setInstance(JavaField<T>* field,T val);
@@ -117,10 +117,10 @@ class JavaField {
 #define JFT(type, setStaticFn, getStaticFn, setInstanceFn, getInstanceFn) \
 template <> \
 struct JavaFieldActor<type> { \
-    static type getStatic(JavaFieldInfo* field){ \
+    static type getStatic(JavaFieldInfoImpl<type>* field){ \
         getStaticFn \
     } \
-    static bool setStatic(JavaFieldInfo* field,type val){ \
+    static bool setStatic(JavaFieldInfoImpl<type>* field,type val){ \
         setStaticFn \
     } \
  \
