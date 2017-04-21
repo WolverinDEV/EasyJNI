@@ -7,10 +7,10 @@ include_directories(/usr/lib/jvm/java-8-oracle/include/ jni/)
 include_directories(/usr/lib/jvm/java-8-oracle/include/linux/ jni/)
 
 set(SOURCE_FILES main.cpp include/Converter.h
-		include/class/JavaClassInfo.cpp
-		include/class/JavaField.cpp
-		include/class/JavaMethode.cpp
-		include/Utils.cpp
+		src/JavaClassInfo.cpp
+		src/JavaField.cpp
+		src/JavaMethode.cpp
+		src/Utils.cpp
 		)
 
 set(INCLUDE_FILES include/utils/StringUtil.h

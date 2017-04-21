@@ -58,7 +58,7 @@ class JavaClassInfo {
         JavaFieldInfoImpl<T>* registerField(std::string name, bool _static){
             auto out = new JavaFieldInfoImpl<T>(this, name, _static);
             fields.push_back(out);
-            printf("Registering static field %s %s", out->name.c_str(), out->getSignature().c_str());
+            printf(("Registering "+ string(_static ? "static" : "instance") +" field %s %s\n").c_str(), out->name.c_str(), out->getSignature().c_str());
             return out;
         }
 
@@ -91,10 +91,12 @@ class JavaClass {
         JavaClass(JavaClassInfo* jiInfo, jobject obj) {
             this->javaInfo= jiInfo;
             this->javaInstance = obj;
+            //cout << "Loading cls instance!" << endl;
         }
 
         ~JavaClass(){
             if(javaInstance){
+                //cout << "Deleting cls instance!" << endl;
                 EasyJNI::Utils::getJNIEnvAttach()->DeleteWeakGlobalRef(javaInstance);
             }
         }

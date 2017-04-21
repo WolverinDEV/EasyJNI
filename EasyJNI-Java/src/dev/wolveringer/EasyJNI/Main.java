@@ -11,6 +11,9 @@ public class Main {
 		TestStaticFields.printValues();
 		runNativeTests();
 		TestStaticFields.printValues();
+		
+		System.runFinalization();
+		System.runFinalizersOnExit(true);
 	}
 	
 	public static native void runNativeTests();

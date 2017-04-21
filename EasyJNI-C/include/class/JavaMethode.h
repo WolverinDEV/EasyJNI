@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <type_traits>
 #include <jni.h>
 #include "JavaClassInfo.h"
 #include "../Converter.h"
@@ -16,19 +17,21 @@ struct JNIMethodeInvoker<type, Args...> {                                       
        _static                                                                                              \
     }                                                                                                       \
                                                                                                             \
-    static type callInstance(JavaMethode<type, Args...>* methode, Args... args) {         \
+    static type callInstance(JavaMethode* methode, Args... args) {         \
         _instance                                                                                           \
     }                                                                                                       \
 };                                                                                                          \
 
 class JavaMethodeInfo;
+
 template <typename ReturnType, typename ...Args>
+class JavaMethodeImpl;
 class JavaMethode;
 
 template <typename T, typename... Args>
 struct JNIMethodeInvoker {
     inline static T callStatic(JavaMethodeInfo* methode, Args... args);
-    static T callInstance(JavaMethode<T, Args...>* methode, jobject instance, Args... args);
+    static T callInstance(JavaMethode* methode, jobject instance, Args... args);
 };
 
 class JavaMethodeInfo {
@@ -79,7 +82,12 @@ class JavaMethodeInfoImpl : public JavaMethodeInfo {
         }
 
         ReturnType callStatic(Args...args){
-            return JNIMethodeInvoker<ReturnType, Args...>::callStatic(this, args...);
+            static constexpr uint8_t nargs = sizeof...(Args);
+            auto env = EasyJNI::Utils::getJNIEnvAttach();
+            JNIParamDestructor<nargs> paramDestructor(env);
+
+            //return JNIToCPPConversor<ReturnType>::convert(JNIMethodeInvoker<decltype(CPPToJNIConversor<ReturnType>::convert((ReturnType) nullptr)), decltype(CPPToJNIConversor<Args>::convert(args))...>::callStatic(this, JNIParamConversor<Args>(args, paramDestructor)...));
+            return JNIMethodeInvoker<ReturnType, decltype(CPPToJNIConversor<Args>::convert(args))...>::callStatic(this, JNIParamConversor<Args>(args, paramDestructor)...); //TODO warp back return type
         }
 
         ReturnType operator()(Args...args){
@@ -87,8 +95,32 @@ class JavaMethodeInfoImpl : public JavaMethodeInfo {
         }
 };
 
-template <typename ReturnType, typename ...Args>
+/*
+template <typename T = void, typename... Args>
+struct JavaMethodeInfoImpl {
+    public:
+        void callStatic(Args...args){
+            static constexpr uint8_t nargs = sizeof...(Args);
+            auto env = EasyJNI::Utils::getJNIEnvAttach();
+            JNIParamDestructor<nargs> paramDestructor(env);
+            JNIMethodeInvoker<void, decltype(CPPToJNIConversor<Args>::convert(args))...>::callStatic(this, JNIParamConversor<Args>(args, paramDestructor)...);
+        }
+
+};
+*/
+
 struct JavaMethode {
+    public:
+        virtual JavaClass* getJavaClassInstance() = 0;
+
+        //template <typename ReturnType, typename ...Args>
+        //virtual JavaMethodeInfoImpl<ReturnType, Args...>* getMethodeInfo() = 0;
+
+        virtual JavaMethodeInfo* getMethodeInfo() = 0;
+};
+
+template <typename ReturnType, typename ...Args>
+struct JavaMethodeImpl : public JavaMethode {
     public:
         JavaClass* klassInstance;
 
@@ -102,20 +134,18 @@ struct JavaMethode {
             return info;
         };
 
-        JavaMethode(JavaClass* klassInstance, JavaMethodeInfoImpl<ReturnType, Args...>* mInfo){
+        JavaMethodeImpl(JavaClass* klassInstance, JavaMethodeInfoImpl<ReturnType, Args...>* mInfo){
             this->info = mInfo;
             this->klassInstance = klassInstance;
         }
 
+
         ReturnType call(Args... args){
-            //XY<uint8_t>::TY;
             static constexpr uint8_t nargs = sizeof...(Args);
             auto env = EasyJNI::Utils::getJNIEnvAttach();
             JNIParamDestructor<nargs> paramDestructor(env);
-            return JNIMethodeInvoker<ReturnType, decltype(CPPToJNIConversor<Args>::convert(args))...>::callStatic(this, JNIParamConversor<Args>(args, paramDestructor)...);
-
-
-            return JNIMethodeInvoker<ReturnType, Args...>::callInstance(this, args...);
+            //return JNIToCPPConversor<ReturnType>::convert(JNIMethodeInvoker<decltype(CPPToJNIConversor<ReturnType>::convert((ReturnType) nullptr)), decltype(CPPToJNIConversor<Args>::convert(args))...>::callInstance(this, JNIParamConversor<Args>(args, paramDestructor)...));
+            return JNIMethodeInvoker<ReturnType, decltype(CPPToJNIConversor<Args>::convert(args))...>::callInstance(this, JNIParamConversor<Args>(args, paramDestructor)...); //TODO warp back return type
         }
 
         ReturnType operator()(Args...args){

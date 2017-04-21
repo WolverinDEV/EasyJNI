@@ -38,19 +38,21 @@ struct JavaFieldInfo {
         virtual std::string getSignature() = 0;
 };
 
-class JavaClassInfo;
 template <typename T>
+class JavaFieldImpl;
+
 class JavaField;
+
 template <typename T>
 class JavaFieldInfoImpl;
 
 template <typename T>
 struct JavaFieldActor {
-    static T getStatic(JavaFieldInfoImpl<T>* field);
-    static bool setStatic(JavaFieldInfoImpl<T>* field,T val);
+    static T getStatic(JavaFieldInfo* field);
+    static bool setStatic(JavaFieldInfo* field,T val);
 
-    static T getInstance(JavaField<T>* field);
-    static bool setInstance(JavaField<T>* field,T val);
+    static T getInstance(JavaField* field);
+    static bool setInstance(JavaField* field,T val);
 };
 
 template <typename T>
@@ -66,12 +68,18 @@ struct JavaFieldInfoImpl : public JavaFieldInfo {
     }
 
     T get(){
-        return JNIToCPPConversor<T>::convert(JavaFieldActor<decltype(CPPToJNIConversor<T>::convert(nullptr))>::getStatic(this));
+        auto out = JavaFieldActor<decltype(CPPToJNIConversor<T>::convert(nullptr))>
+        ::getStatic((JavaFieldInfoImpl<decltype(CPPToJNIConversor<T>::convert(nullptr))>*) this);
+
+        auto des = JNIParamDestructor<1>(EasyJNI::Utils::getJNIEnvAttach()); //Delete lcoal ref outside of this fn
+        des.add(out);
+
+        return JNIToCPPConversor<T>::convert(out);
     }
 
     bool set(T obj){
         decltype(CPPToJNIConversor<T>::convert(obj)) nobj = CPPToJNIConversor<T>::convert(obj);
-        return JavaFieldActor<decltype(nobj)>::setStatic(this, nobj);
+        return JavaFieldActor<decltype(nobj)>::setStatic((JavaFieldInfo*) this, nobj);
     }
 
     bool operator=(T obj){
@@ -79,14 +87,23 @@ struct JavaFieldInfoImpl : public JavaFieldInfo {
     }
 };
 
-template<typename T>
 class JavaField {
+    public:
+        //template <typename T>
+        //virtual JavaFieldInfoImpl<T>* getFieldInfo() = 0;
+
+        virtual JavaFieldInfo* getFieldInfo() = 0;
+
+        virtual JavaClass* getClassInstance() = 0;
+};
+
+template<typename T>
+class JavaFieldImpl : public JavaField {
     public:
         JavaFieldInfoImpl<T> *info;
         JavaFieldInfoImpl<T>* getFieldInfo(){
             return info;
         }
-
 
         JavaClass *klassInstance;
 
@@ -94,19 +111,23 @@ class JavaField {
             return klassInstance;
         }
     public:
-        JavaField(JavaClass *klassInstance, JavaFieldInfoImpl<T>* finfo) {
+        JavaFieldImpl(JavaClass *klassInstance, JavaFieldInfoImpl<T>* finfo) {
             this->klassInstance = klassInstance;
             this->info = finfo;
-            std::cout << "Init field! " << info->name << std::endl;
         }
 
         T get() {
-            return JNIToCPPConversor<T>::convert(JavaFieldActor<decltype(CPPToJNIConversor<T>::convert(nullptr))>::getInstance(this));
+            auto res = JavaFieldActor<decltype(CPPToJNIConversor<T>::convert(nullptr))>::getInstance(this);
+
+            auto des = JNIParamDestructor<1>(EasyJNI::Utils::getJNIEnvAttach()); //Delete lcoal ref outside of this fn
+            des.add(res);
+
+            return JNIToCPPConversor<T>::convert(res);
         }
 
         bool set(T obj){
             decltype(CPPToJNIConversor<T>::convert(obj)) nobj = CPPToJNIConversor<T>::convert(obj);
-            return JavaFieldActor<decltype(nobj)>::setInstance(this, nobj);
+            return JavaFieldActor<decltype(nobj)>::setInstance(this, nobj); //TODO fix cast
         }
 
         bool operator=(T obj){
@@ -117,17 +138,17 @@ class JavaField {
 #define JFT(type, setStaticFn, getStaticFn, setInstanceFn, getInstanceFn) \
 template <> \
 struct JavaFieldActor<type> { \
-    static type getStatic(JavaFieldInfoImpl<type>* field){ \
+    static type getStatic(JavaFieldInfo* field){ \
         getStaticFn \
     } \
-    static bool setStatic(JavaFieldInfoImpl<type>* field,type val){ \
+    static bool setStatic(JavaFieldInfo* field,type val){ \
         setStaticFn \
     } \
  \
-    static type getInstance(JavaField<type>* field){ \
+    static type getInstance(JavaField* field){ \
         getInstanceFn \
     } \
-    static bool setInstance(JavaField<type>* field,type val){ \
+    static bool setInstance(JavaField* field,type val){ \
         setInstanceFn \
     } \
 };
