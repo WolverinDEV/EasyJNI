@@ -6,7 +6,7 @@
 
 #include <iostream>
 #include "jni.h"
-#include "../Converter.h"
+#include "../TypeConverter.h"
 #include "../Utils.h"
 
 class JavaClassInfo;

@@ -1,14 +1,6 @@
 #include <jni.h>
 #include <iostream>
-#include "../include/Utils.h"
-#include "../include/class/JavaMethodeImpl.h"
-#include "../include/class/JavaFieldImpl.h"
-#include "TestJavaClasses.h"
-
-#include <memory>
-#include <algorithm>
-#include <iostream>
-#include <cstdio>
+#include "../include/EasyJNI.h"
 
 using namespace std;
 
@@ -33,7 +25,7 @@ JNI_CLASS(dev_wolveringer_EasyJNI_test, TestInstanceFields,
 )
 
 JNI_CLASS(dev_wolveringer_EasyJNI_test_instance, BasicClass,
-    JNI_CLASS_CONSTRUCTOR(constructor, string, string);
+          JNI_CLASS_CONSTRUCTOR(constructor, string, string);
           JNI_CLASS_FIELD(string, name);
           JNI_CLASS_FIELD(string, value);
 )
@@ -45,6 +37,7 @@ JNI_CLASS(dev_wolveringer_EasyJNI_test_instance, InformationHolder,
 void testMethode(JNIEnv *env, jclass klass){
     auto iholder = dev_wolveringer_EasyJNI_test_instance_InformationHolder::AllocateNewInstance();
     iholder->constructor_default();
+    JNI_EXCEPTION_CHECK;
 
     auto belm = dev_wolveringer_EasyJNI_test_instance_BasicClass::AllocateNewInstance();
     belm->constructor("hello", "world");
@@ -52,7 +45,15 @@ void testMethode(JNIEnv *env, jclass klass){
     iholder->basicInfo.set(belm);
 
     auto out = iholder->basicInfo.get();
-    printf("Info: %s, %s", out->name.get().c_str(), out->value.get().c_str());
+    printf("Info: %s, %s for object: %s", out->name.get().c_str(), out->value.get().c_str(), out->toString().c_str());
+}
+
+JNI_CLASS(dev_wolveringer_EasyJNI, Main,
+    JNI_STATIC_METHODE("runNativeTests", runNativeTests, void);
+)
+
+void runner(void*){
+    EasyJNI::Utils::getJNIEnvAttach();
 }
 
 extern "C" {
@@ -64,13 +65,14 @@ jint JNI_OnLoad(JavaVM *vm, void *reserved) {
         return 0;
     }
 
-    jclass TestClass = env->FindClass("dev/wolveringer/EasyJNI/Main");
-
-    JNINativeMethod methods[1] = {"runNativeTests", "()V", &testMethode};
-
-    env->RegisterNatives(TestClass, (const JNINativeMethod*) methods, 1);
+    dev_wolveringer_EasyJNI_Main::runNativeTests()->bindNative((uintptr_t) &testMethode);
 
     printf("inizalisized EasyJNITest libary successfully!\n");
+
+    pthread_t handle;
+    pthread_create(&handle, nullptr, runner, nullptr);
+    pthread_join(handle, nullptr);
+
     return JNI_VERSION_1_6;
 }
 }

@@ -7,20 +7,20 @@
 #include <type_traits>
 #include <jni.h>
 #include "JavaClassInfo.h"
-#include "../Converter.h"
+#include "../TypeConverter.h"
 #include "../Utils.h"
 
 #define JMIC(type, _static, _instance)                                                                       \
-template <typename... Args>                                                                                 \
-struct JNIMethodeInvoker<type, Args...> {                                                                   \
-    inline static type callStatic(JavaMethodeInfo* methode, Args... args){                                         \
-       _static                                                                                              \
-    }                                                                                                       \
-                                                                                                            \
-    static type callInstance(JavaMethode* methode, Args... args) {         \
-        _instance                                                                                           \
-    }                                                                                                       \
-};                                                                                                          \
+template <typename... Args>                                                                                  \
+struct JNIMethodeInvoker<type, Args...> {                                                                    \
+    inline static type callStatic(JavaMethodeInfo* methode, Args... args){                                   \
+       _static                                                                                               \
+    }                                                                                                        \
+                                                                                                             \
+    static type callInstance(JavaMethode* methode, Args... args) {                                           \
+        _instance                                                                                            \
+    }                                                                                                        \
+};                                                                                                           \
 
 class JavaMethodeInfo;
 
@@ -45,6 +45,10 @@ class JavaMethodeInfo {
         }
 
         std::string name;
+        std::string getName(){
+            return name;
+        }
+
         jmethodID id = nullptr;
 
         virtual std::string getSignature() = 0;
@@ -86,12 +90,20 @@ class JavaMethodeInfoImpl : public JavaMethodeInfo {
             auto env = EasyJNI::Utils::getJNIEnvAttach();
             JNIParamDestructor<nargs> paramDestructor(env);
 
-            //return JNIToCPPConversor<ReturnType>::convert(JNIMethodeInvoker<decltype(CPPToJNIConversor<ReturnType>::convert((ReturnType) nullptr)), decltype(CPPToJNIConversor<Args>::convert(args))...>::callStatic(this, JNIParamConversor<Args>(args, paramDestructor)...));
-            return JNIMethodeInvoker<ReturnType, decltype(CPPToJNIConversor<Args>::convert(args))...>::callStatic(this, JNIParamConversor<Args>(args, paramDestructor)...); //TODO warp back return type
+            return JNIToCPPConversor<ReturnType>::convert(JNIMethodeInvoker<decltype(CPPToJNIConversor<ReturnType>::convert(nullptr)), decltype(CPPToJNIConversor<Args>::convert(args))...>::callStatic((JavaMethode*) this, JNIParamConversor<Args>(args, paramDestructor)...));
         }
 
         ReturnType operator()(Args...args){
             return callStatic(args...);
+        }
+
+        void bindNative(uintptr_t fnPointer){
+            jclass jClass = klass->getJavaClass();
+            JNINativeMethod methods[1] = {(char*) getName().c_str(),(char*) getSignature().c_str(), (void*) fnPointer};
+
+            EasyJNI_debugClass(klass->getFullName().c_str(), "Binding %s native methode %s%s to %#08x\n", _static ? "static" : "", methods[0].name, methods[0].signature, fnPointer);
+            EasyJNI::Utils::getJNIEnvAttach()->RegisterNatives(jClass, methods, 1);
+            JNI_EXCEPTION_CHECK;
         }
 };
 
@@ -145,10 +157,43 @@ struct JavaMethodeImpl : public JavaMethode {
             auto env = EasyJNI::Utils::getJNIEnvAttach();
             JNIParamDestructor<nargs> paramDestructor(env);
             //return JNIToCPPConversor<ReturnType>::convert(JNIMethodeInvoker<decltype(CPPToJNIConversor<ReturnType>::convert((ReturnType) nullptr)), decltype(CPPToJNIConversor<Args>::convert(args))...>::callInstance(this, JNIParamConversor<Args>(args, paramDestructor)...));
-            return JNIMethodeInvoker<ReturnType, decltype(CPPToJNIConversor<Args>::convert(args))...>::callInstance(this, JNIParamConversor<Args>(args, paramDestructor)...); //TODO warp back return type
+            decltype(CPPToJNIConversor<ReturnType>::convert(nullptr)) retVal = JNIMethodeInvoker<decltype(CPPToJNIConversor<ReturnType>::convert(nullptr)), decltype(CPPToJNIConversor<Args>::convert(args))...>::callInstance((JavaMethode*) this, JNIParamConversor<Args>(args, paramDestructor)...);
+            return JNIToCPPConversor<ReturnType>::convert(retVal);
         }
 
         ReturnType operator()(Args...args){
             return call(args...);
         }
+};
+
+template <typename ...Args>
+struct JavaMethodeImpl<void, Args...> : public JavaMethode {
+    JavaClass* klassInstance;
+
+    JavaClass* getJavaClassInstance(){
+        return klassInstance;
+    }
+
+    JavaMethodeInfoImpl<void, Args...>* info;
+
+    JavaMethodeInfoImpl<void, Args...>* getMethodeInfo(){
+        return info;
+    };
+
+    JavaMethodeImpl(JavaClass* klassInstance, JavaMethodeInfoImpl<void, Args...>* mInfo){
+        this->info = mInfo;
+        this->klassInstance = klassInstance;
+    }
+
+
+    void call(Args... args){
+        static constexpr uint8_t nargs = sizeof...(Args);
+        auto env = EasyJNI::Utils::getJNIEnvAttach();
+        JNIParamDestructor<nargs> paramDestructor(env);
+        JNIMethodeInvoker<void, decltype(CPPToJNIConversor<Args>::convert(args))...>::callInstance(this, JNIParamConversor<Args>(args, paramDestructor)...); //TODO warp back return type
+    }
+
+    void operator()(Args...args){
+        call(args...);
+    }
 };

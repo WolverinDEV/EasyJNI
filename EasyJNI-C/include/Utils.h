@@ -11,22 +11,30 @@
 
 class JavaClass;
 class JavaClassInfo;
+class JavaMethodeInfo;
+
 namespace EasyJNI {
     class JNIException: public std::exception
     {
         public:
             std::string message;
             JNIException(const std::string & message);
+            JNIException(JNIException&& handle);
             virtual const char* what() const throw();
     };
 
     class Utils {
         private:
-            static JNIEnv * env;
+            //static JNIEnv * env;
             static JavaVM * javaVM;
+            static pthread_key_t JNIEnvKey;
+
+            static void KeyDetachCurrentThread(void* keyValuePtr);
         public:
             static void init(JavaVM * vm, JNIEnv * env);
-            static inline JNIEnv * getJNIEnv() { return env;}
+            static void uinit(JavaVM *vm);
+
+            //static inline JNIEnv * getJNIEnv() { return env;}
             static JNIEnv* getJNIEnvAttach();
 
             static jstring toJString(const char * str);
@@ -44,15 +52,24 @@ namespace EasyJNI {
             static std::vector<float> toVectorFloat(jfloatArray);
             static std::vector<jobject> toVectorJObject(jobjectArray);
 
-            //static SPJNIMethodInfo getStaticMethodInfo(const std::string& className, const std::string& methodName, const char * signature);
-            //static SPJNIMethodInfo getMethodInfo(const std::string& className, const std::string& methodName, const char * signature);
             static void checkException();
     };
 
     namespace Helpers {
         extern jobject getJClassInstance(JavaClass*);
         extern jclass getJClass(JavaClassInfo*);
+        extern std::string getMethodeName(JavaMethodeInfo*);
     }
 }
 
 #define JNI_EXCEPTION_CHECK EasyJNI::Utils::checkException();
+
+#include <stdarg.h>
+
+#ifdef EasyJNI_ENABLE_DEBUG
+    #define EasyJNI_debug(message, ...) printf((string("[EasyJNI] ") + message).c_str(), ##__VA_ARGS__);
+    #define EasyJNI_debugClass(klass, message, ...) printf(("[EasyJNI] [%s] " + string(message)).c_str(), klass, ##__VA_ARGS__);
+#else
+    #define EasyJNI_debug(message, ...)
+    #define EasyJNI_debugClass(klass, message, ...)
+#endif
