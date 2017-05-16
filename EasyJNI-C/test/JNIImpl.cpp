@@ -57,22 +57,18 @@ void runner(void*){
 }
 
 extern "C" {
-jint JNI_OnLoad(JavaVM *vm, void *reserved) {
-    printf("Inizalissizing EasyJNITest libary!\n");
-    auto env = EasyJNI::Utils::getJNIEnvAttach();
-    if(!env){
-        printf("Failed to load EasyJNI env attachment!\n");
-        return 0;
+    jint JNI_OnLoad(JavaVM *vm, void *reserved) {
+        printf("Inizalissizing EasyJNITest libary!\n");
+        auto env = EasyJNI::Utils::getJNIEnvAttach();
+        if(!env){
+            printf("Failed to load EasyJNI env attachment!\n");
+            return 0;
+        }
+
+        dev_wolveringer_EasyJNI_Main::runNativeTests()->bindNative((uintptr_t) &testMethode);
+
+        printf("inizalisized EasyJNITest libary successfully!\n");
+
+        return JNI_VERSION_1_6;
     }
-
-    dev_wolveringer_EasyJNI_Main::runNativeTests()->bindNative((uintptr_t) &testMethode);
-
-    printf("inizalisized EasyJNITest libary successfully!\n");
-
-    pthread_t handle;
-    pthread_create(&handle, nullptr, runner, nullptr);
-    pthread_join(handle, nullptr);
-
-    return JNI_VERSION_1_6;
-}
 }

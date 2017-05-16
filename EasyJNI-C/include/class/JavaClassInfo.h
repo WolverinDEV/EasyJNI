@@ -1,7 +1,3 @@
-//
-// Created by wolverindev on 18.04.17.
-//
-
 #pragma once
 
 #include "../Utils.h"
@@ -79,7 +75,7 @@ class JavaClassInfo {
             auto out = new JavaFieldInfoImpl<T>(this, name, _static);
             fields.push_back(out);
 
-            EasyJNI_debugClass(getFullName().c_str(), "Register %s field %s with the signature %s\n", _static ? "static" : "", name.c_str(), out->getSignature().c_str());
+            EasyJNI_debugClass(getFullName().c_str(), "Register %sfield %s with the signature %s\n", _static ? "static " : "", name.c_str(), out->getSignature().c_str());
             return out;
         }
 
@@ -87,7 +83,7 @@ class JavaClassInfo {
         JavaMethodeInfoImpl<T, Args...>* registerMethode(std::string name, bool _static){
             JavaMethodeInfoImpl<T, Args...>* info = new JavaMethodeInfoImpl<T, Args...>(this, name, _static);
             methods.push_back(info);
-            EasyJNI_debugClass(getFullName().c_str(), "Register %s methode %s with the siganture %s\n", _static ? "static" : "", name.c_str(), info->getSignature().c_str());
+            EasyJNI_debugClass(getFullName().c_str(), "Register %smethode %s with the siganture %s\n", _static ? "static " : "", name.c_str(), info->getSignature().c_str());
             return info;
         };
 

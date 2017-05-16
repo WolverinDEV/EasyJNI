@@ -98,7 +98,7 @@ class JavaMethodeInfoImpl : public JavaMethodeInfo {
         }
 
         void bindNative(uintptr_t fnPointer){
-            jclass jClass = klass->getJavaClass();
+            auto jClass = klass->getJavaClass();
             JNINativeMethod methods[1] = {(char*) getName().c_str(),(char*) getSignature().c_str(), (void*) fnPointer};
 
             EasyJNI_debugClass(klass->getFullName().c_str(), "Binding %s native methode %s%s to %#08x\n", _static ? "static" : "", methods[0].name, methods[0].signature, fnPointer);
