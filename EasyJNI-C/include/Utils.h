@@ -25,7 +25,6 @@ namespace EasyJNI {
 
     class Utils {
         private:
-            //static JNIEnv * env;
             static JavaVM * javaVM;
             static pthread_key_t JNIEnvKey;
 
@@ -34,7 +33,6 @@ namespace EasyJNI {
             static void init(JavaVM * vm, JNIEnv * env);
             static void uinit(JavaVM *vm);
 
-            //static inline JNIEnv * getJNIEnv() { return env;}
             static JNIEnv* getJNIEnvAttach();
 
             static jstring toJString(const char * str);

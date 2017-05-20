@@ -68,8 +68,7 @@ struct JavaFieldInfoImpl : public JavaFieldInfo {
     }
 
     T get(){
-        auto out = JavaFieldActor<decltype(CPPToJNIConversor<T>::convert(nullptr))>
-        ::getStatic((JavaFieldInfoImpl<decltype(CPPToJNIConversor<T>::convert(nullptr))>*) this);
+        auto out = JavaFieldActor<decltype(CPPToJNIConversor<T>::convert(nullptr))>::getStatic(this);
 
         auto des = JNIParamDestructor<1>(EasyJNI::Utils::getJNIEnvAttach()); //Delete lcoal ref outside of this fn
         des.add(out);
@@ -97,6 +96,7 @@ class JavaField {
         virtual JavaClass* getClassInstance() = 0;
 };
 
+#include <typeinfo>
 template<typename T>
 class JavaFieldImpl : public JavaField {
     public:
@@ -126,12 +126,12 @@ class JavaFieldImpl : public JavaField {
         }
 
         bool set(T obj){
-            decltype(CPPToJNIConversor<T>::convert(obj)) nobj = CPPToJNIConversor<T>::convert(obj);
+            decltype(CPPToJNIConversor<T>::convert(nullptr)) nobj = CPPToJNIConversor<T>::convert(obj);
             return JavaFieldActor<decltype(nobj)>::setInstance(this, nobj); //TODO fix cast
         }
 
-        bool operator=(T obj){
-            return set(obj);
+        void operator=(T obj){
+            set(obj);
         }
 };
 

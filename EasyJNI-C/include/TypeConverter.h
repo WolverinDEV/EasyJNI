@@ -11,48 +11,52 @@
 #pragma mark Compile Time Strings
 
 //Compile Time String
-template <char... Cs> struct CompileTimeString {
-    static const char * value() {
+template<char... Cs>
+struct CompileTimeString {
+    static const char *value() {
         static const char a[sizeof...(Cs)] = {Cs...};
         return a;
     }
 };
 
 //Concatenate 2 Strings
-template <class L, class R> struct Concatenate2;
+template<class L, class R>
+struct Concatenate2;
 
-template <char... LC, char... RC>
+template<char... LC, char... RC>
 struct Concatenate2<CompileTimeString<LC...>, CompileTimeString<RC...>> {
     using Result = CompileTimeString<LC..., RC...>;
 };
 
 //Concatenate N strings
-template <typename ...C> struct Concatenate;
+template<typename ...C>
+struct Concatenate;
 
-template <typename C1> struct Concatenate<C1>{
+template<typename C1>
+struct Concatenate<C1> {
     using Result = C1;
 };
 
-template <typename C1, typename C2> struct Concatenate<C1,C2>{
-    using Result = typename Concatenate2<C1,C2>::Result ;
+template<typename C1, typename C2>
+struct Concatenate<C1, C2> {
+    using Result = typename Concatenate2<C1, C2>::Result;
 };
 
-template <typename C1, typename ...C> struct Concatenate<C1,C...>{
-    using Result = typename Concatenate2<C1,typename Concatenate<C...>::Result>::Result;
+template<typename C1, typename ...C>
+struct Concatenate<C1, C...> {
+    using Result = typename Concatenate2<C1, typename Concatenate<C...>::Result>::Result;
 };
-
-
-
 
 
 #include <boost/preprocessor/repetition/repeat.hpp>
 #include <boost/preprocessor/punctuation/comma_if.hpp>
 
-template <unsigned int N>
-constexpr char get_ch (char const (&s) [N], unsigned int i)
-{
+template<unsigned int N>
+constexpr char get_ch(char const (&s)[N], unsigned int i) {
     return i >= N ? '\0' : (s[i] == '_' ? '/' : (s[i] == '\0' ? ';' : s[i]));
 }
+
+#define DEFAULT_CLASS_STR_LENGTH 100
 
 #define CLASS_STRING_TO_CHARS_EXTRACT(z, n, data) \
         BOOST_PP_COMMA_IF(n) get_ch(data, n)
@@ -60,7 +64,8 @@ constexpr char get_ch (char const (&s) [N], unsigned int i)
 #define CLASS_STRING_TO_CHARS(STRLEN, STR)  \
         BOOST_PP_REPEAT(STRLEN, CLASS_STRING_TO_CHARS_EXTRACT, STR)
 
-
+#define CLASS_STRING_TO_CHARS_DEFAULT(STR)  \
+        CLASS_STRING_TO_CHARS(DEFAULT_CLASS_STR_LENGTH, STR)
 
 #pragma mark C++ To JNI conversion templates
 
@@ -68,6 +73,7 @@ constexpr char get_ch (char const (&s) [N], unsigned int i)
 template<typename T>
 struct CPPToJNIConversor {
     using JNIType = T;
+
     inline static T convert(T obj);
 };
 
@@ -152,17 +158,23 @@ struct CPPToJNIConversor<type> { \
     using JNITypeName = cname; \
     using JNIType = jnitype; \
     inline static jnitype convert(type& obj) { \
-	    convertFn; \
+        convertFn; \
     };\
+    inline static jnitype convert(std::nullptr_t) { };\
 };
 
 CPP_JNI(jlong, jlong, CompileTimeString<'J'>, return obj);
+
 CPP_JNI(jint, jint, CompileTimeString<'I'>, return obj);
+
 CPP_JNI(jshort, jshort, CompileTimeString<'S'>, return obj);
+
 CPP_JNI(jchar, jchar, CompileTimeString<'C'>, return obj);
+
 CPP_JNI(jbyte, jbyte, CompileTimeString<'B'>, return obj);
 
 CPP_JNI(jfloat, jfloat, CompileTimeString<'F'>, return obj);
+
 CPP_JNI(jdouble, jdouble, CompileTimeString<'D'>, return obj);
 
 CPP_JNI(jboolean, jboolean, CompileTimeString<'Z'>, return obj);
@@ -171,8 +183,9 @@ CPP_JNI(jboolean, jboolean, CompileTimeString<'Z'>, return obj);
 
 template<>
 struct CPPToJNIConversor<jstring> {
-    using JNITypeName = CompileTimeString<'L','j','a','v','a','/','l','a','n','g','/','S','t','r','i','n','g',';'>;
+    using JNITypeName = CompileTimeString<'L', 'j', 'a', 'v', 'a', '/', 'l', 'a', 'n', 'g', '/', 'S', 't', 'r', 'i', 'n', 'g', ';'>;
     using JNIType = jstring;
+
     static JNIType convert(jstring obj) {
         return obj;
     };
@@ -180,17 +193,20 @@ struct CPPToJNIConversor<jstring> {
 
 template<>
 struct CPPToJNIConversor<std::string> {
-    using JNITypeName = CompileTimeString<'L','j','a','v','a','/','l','a','n','g','/','S','t','r','i','n','g',';'>;
+    using JNITypeName = CompileTimeString<'L', 'j', 'a', 'v', 'a', '/', 'l', 'a', 'n', 'g', '/', 'S', 't', 'r', 'i', 'n', 'g', ';'>;
     using JNIType = jstring;
+
     static JNIType convert(std::string obj) {
         return EasyJNI::Utils::toJString(obj.c_str());
     };
 };
+
 template<>
-struct CPPToJNIConversor<const char*> {
-    using JNITypeName = CompileTimeString<'L','j','a','v','a','/','l','a','n','g','/','S','t','r','i','n','g',';'>;
+struct CPPToJNIConversor<const char *> {
+    using JNITypeName = CompileTimeString<'L', 'j', 'a', 'v', 'a', '/', 'l', 'a', 'n', 'g', '/', 'S', 't', 'r', 'i', 'n', 'g', ';'>;
     using JNIType = jstring;
-    static JNIType convert(const char* obj) {
+
+    static JNIType convert(const char *obj) {
         return EasyJNI::Utils::toJString(obj);
     };
 };
@@ -204,10 +220,11 @@ struct CPPToJNIConversor<jobject> {
 };
 
 template<typename T>
-struct CPPToJNIConversor<T*> {
+struct CPPToJNIConversor<T *> {
     using JNITypeName = CPPToJNIConversor<jlong>::JNITypeName;
     using JNIType = CPPToJNIConversor<jlong>::JNIType;
-    inline static jlong convert(T*& obj) {
+
+    inline static jlong convert(T *&obj) {
         return (jlong) obj;
     };
 };
@@ -215,8 +232,8 @@ struct CPPToJNIConversor<T*> {
 #define CPP_JNI_NAME_FROM_JNI(cppType, jniType) CPP_JNI(cppType, jniType, CPPToJNIConversor<jniType>::JNITypeName , return static_cast<jniType>(obj))
 
 CPP_JNI_NAME_FROM_JNI(bool, jboolean)
-CPP_JNI_NAME_FROM_JNI(char, jbyte)
 
+CPP_JNI_NAME_FROM_JNI(char, jbyte)
 
 template<>
 struct CPPToJNIConversor<void> {
@@ -229,14 +246,14 @@ struct CPPToJNIConversor<void> {
 
 template<typename T>
 struct JNIToCPPConversor {
-    inline static T convert(T obj){
+    inline static T convert(T obj) {
         return obj;
     }
 };
 
 template<>
 struct JNIToCPPConversor<void> {
-    inline static void convert(void){ }
+    inline static void convert(void) {}
 };
 
 #define JNI_CPP(jniType, cppType, actor) \
@@ -250,18 +267,24 @@ struct JNIToCPPConversor<cppType> { \
 
 
 JNI_CPP(jboolean, bool, return obj);
+
 JNI_CPP(jbyte, char, return obj);
+
 JNI_CPP(jchar, uint16_t, return obj);
+
 JNI_CPP(jshort, int16_t, return obj);
+
 JNI_CPP(jint, int32_t, return obj);
+
 JNI_CPP(jlong, int64_t, return obj);
 
 //Ptr cast
 template<typename T>
-struct JNIToCPPConversor<T*> {
-    inline static T* convert(jlong obj){
-        return (T*) obj;
+struct JNIToCPPConversor<T *> {
+    inline static T *convert(jlong obj) {
+        return (T *) obj;
     }
+
     using JNIType = jlong;
 };
 
@@ -297,8 +320,8 @@ inline static std::vector <jobject> convert(jobject obj) { return Utils::toVecto
 #pragma mark JNI Signature Utilities
 
 //deduces the signature of a JNI method according to the variadic params and the return type
-template <typename T, typename... Args>
-inline const char * getJNISignature(Args...) {
+template<typename T, typename... Args>
+inline const char *getJNISignature(Args...) {
     return Concatenate<CompileTimeString<'('>, //left parenthesis
             typename CPPToJNIConversor<Args>::JNIType..., //params signature
             CompileTimeString<')'>, //right parenthesis
@@ -308,17 +331,16 @@ inline const char * getJNISignature(Args...) {
 }
 
 
-
 #pragma mark JNI Param Destructor Templates
 
 //Helper object to destroy parameters converter to JNI
-template <uint8_t NUM_PARAMS>
+template<uint8_t NUM_PARAMS>
 struct JNIParamDestructor {
-    JNIEnv* jniEnv;
+    JNIEnv *jniEnv;
     jobject jniParams[NUM_PARAMS] = {0};
     int currentIndex;
 
-    JNIParamDestructor(JNIEnv * env): jniEnv(env), currentIndex(0) {
+    JNIParamDestructor(JNIEnv *env) : jniEnv(env), currentIndex(0) {
 
     }
 
@@ -329,9 +351,10 @@ struct JNIParamDestructor {
 
     ~JNIParamDestructor() {
         //printf("Deleting refs!");
-        for (int i = 0; i< NUM_PARAMS; ++i) {
+        for (int i = 0; i < NUM_PARAMS; ++i) {
             if (jniParams[i])
-                jniEnv->DeleteLocalRef(jniParams[i]);
+                if(jniEnv->GetObjectRefType(jniParams[i]) == jobjectRefType::JNILocalRefType)
+                    jniEnv->DeleteLocalRef(jniParams[i]);
         }
         JNI_EXCEPTION_CHECK
     }
@@ -340,7 +363,8 @@ struct JNIParamDestructor {
 //optimized base case for the destructor
 template<>
 struct JNIParamDestructor<0> {
-    JNIParamDestructor(JNIEnv * env) {}
+    JNIParamDestructor(JNIEnv *env) {}
+
     ~JNIParamDestructor() {
         JNI_EXCEPTION_CHECK
     }
@@ -355,32 +379,41 @@ struct JNIDestructorDecider {
 };
 
 template<typename D>
-struct JNIDestructorDecider<jobject,D> {
-    inline static void deleteReference(jobject obj, D & destructor) {destructor.add(obj);}
+struct JNIDestructorDecider<jobject, D> {
+    inline static void deleteReference(jobject obj, D &destructor) { destructor.add(obj); }
 };
 
 template<typename D>
-struct JNIDestructorDecider<jbyteArray,D> {
-    inline static void deleteReference(jbyteArray obj, D & destructor) {destructor.add((jobject)obj);}
+struct JNIDestructorDecider<jbyteArray, D> {
+    inline static void deleteReference(jbyteArray obj, D &destructor) { destructor.add((jobject) obj); }
 };
 
 template<typename D>
-struct JNIDestructorDecider<jobjectArray,D> {
-    inline static void deleteReference(jobjectArray obj, D & destructor) {destructor.add((jobject)obj);}
+struct JNIDestructorDecider<jobjectArray, D> {
+    inline static void deleteReference(jobjectArray obj, D &destructor) { destructor.add((jobject) obj); }
 };
 
 template<typename D>
-struct JNIDestructorDecider<jstring,D> {
-    inline static void deleteReference(jstring obj, D & destructor) {destructor.add((jobject)obj);}
+struct JNIDestructorDecider<jstring, D> {
+    inline static void deleteReference(jstring obj, D &destructor) { destructor.add((jobject) obj); }
 };
 
 #pragma mark JNI Param Conversor Utility Template
 
 //JNI param conversor helper: Converts the parameter to JNI and adds it to the destructor if needed
-template <typename T, typename D>
-auto JNIParamConversor(const T & arg, D & destructor) -> decltype(CPPToJNIConversor<T>::convert(arg))
-{
+template<typename T, typename D>
+auto JNIParamConversor(T &arg, D &destructor) -> decltype(CPPToJNIConversor<T>::convert(arg)) {
     auto result = CPPToJNIConversor<T>::convert(arg);
-    JNIDestructorDecider<decltype(CPPToJNIConversor<T>::convert(arg)),D>::deleteReference(result, destructor);
+    JNIDestructorDecider<decltype(result), D>::deleteReference(result, destructor);
     return result;
 }
+
+/*
+#define CLASS_PCONV(name) \
+template<typename D> \
+auto JNIParamConversor(JNI_CLASS_PTR(name) &arg, D &destructor) -> decltype(CPPToJNIConversor<JNI_CLASS_PTR(name)>::convert(nullptr)) { \
+    auto result = CPPToJNIConversor<JNI_CLASS_PTR(name)>::convert(arg); \
+    JNIDestructorDecider<decltype(result), D>::deleteReference(result, destructor); \
+    return result; \
+}
+ */

@@ -49,14 +49,15 @@ struct JNIToCPPConversor<JNI_CLASS_PTR(package ##_## name)> {                   
 };                                                                                                                                                                     \
 template<>                                                                                                                                                             \
 struct CPPToJNIConversor<JNI_CLASS_PTR(package ##_## name)> {                                                                                                          \
-    using JNITypeName = CompileTimeString<'L', CLASS_STRING_TO_CHARS(50, STRINGIZE(package ##_## name))>;                                                              \
+    using JNITypeName = CompileTimeString<'L', CLASS_STRING_TO_CHARS_DEFAULT(STRINGIZE(package ##_## name))>;                                                          \
     using JNIType = jobject;                                                                                                                                           \
     static jobject convert(JNI_CLASS_PTR(package ##_## name)& obj) {                                                                                                   \
         return obj->getJavaInstance();                                                                                                                                 \
     };                                                                                                                                                                 \
                                                                                                                                                                        \
     static jobject convert(nullptr_t obj) { return nullptr; }                                                                                                          \
-};
+}; \
+//CLASS_PCONV(package ##_## name)
 
 
 
@@ -99,16 +100,16 @@ private:                                                                        
         static JNI_CLASS_PTR(clsName) AllocateNewInstance() {                                                                                                          \
             auto env = EasyJNI::Utils::getJNIEnvAttach();                                                                                                              \
             auto clInstance = env->AllocObject(clsName::ClassInfo->getJavaClass());                                                                                    \
-            clInstance = env->NewWeakGlobalRef(clInstance);                                                                                                            \
+            clInstance = env->NewGlobalRef(clInstance);                                                                                                            \
             clsName* ptrInstance = new clsName(clsName::ClassInfo, clInstance);                                                                                        \
-            return JNI_CLASS_PTR(clsName)(std::move(ptrInstance));                                                                                                     \
+            return JNI_CLASS_PTR(clsName)(std::move(ptrInstance), [](clsName* ptr){ delete ptr; });                                                                    \
         }
 
 #define JNI_JNI_INSTANCE_CONSTRUCTOR(clsName)                                                                                                                          \
-        static JNI_CLASS_PTR(clsName) NewInstance(jobject clInstance, bool makeWeak = true) {                                                                          \
-            if(makeWeak) clInstance = EasyJNI::Utils::getJNIEnvAttach()->NewWeakGlobalRef(clInstance);                                                                 \
+        static JNI_CLASS_PTR(clsName) NewInstance(jobject clInstance, bool makeGlobal = true) {                                                                          \
+            if(makeGlobal) clInstance = EasyJNI::Utils::getJNIEnvAttach()->NewGlobalRef(clInstance);                                                                 \
             clsName* ptrInstance = new clsName(clsName::ClassInfo, clInstance);                                                                                        \
-            return JNI_CLASS_PTR(clsName)(std::move(ptrInstance));                                                                                                     \
+            return JNI_CLASS_PTR(clsName)(std::move(ptrInstance), [](clsName* ptr){ delete ptr; });                                                                    \
         }
 
 #define JNI_CLASS_METHODE(name, fnName, retType, arguments...)                                                                                                         \

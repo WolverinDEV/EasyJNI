@@ -3,8 +3,8 @@ project(EasyJNI)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fpermissive")
 
-include_directories(/usr/lib/jvm/java-8-oracle/include/ jni/)
-include_directories(/usr/lib/jvm/java-8-oracle/include/linux/ jni/)
+include_directories(/usr/lib/jvm/java-8-openjdk-amd64/include/ jni/)
+include_directories(/usr/lib/jvm/java-8-openjdk-amd64/include/linux/ jni/)
 
 set(SOURCE_FILES main.cpp
 		src/JavaClassInfo.cpp

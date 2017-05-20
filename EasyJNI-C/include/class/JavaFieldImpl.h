@@ -31,6 +31,7 @@ JFT_PRIMATIVE(jobject, Object)
 JFT_PRIMATIVE(jstring, Object)
 //type, setStaticFn, getStaticFn, setInstanceFn, getInstanceFn
 
+/*
 //TODO Imprtant delete JavaClass instance
 JFT(JavaClass*,
     return JavaFieldActor<jobject>::setStatic((JavaFieldInfoImpl<jobject>*) field, val->getJavaInstance());
@@ -41,3 +42,4 @@ JFT(JavaClass*,
     ,
     return new JavaClass(field->getFieldInfo()->getClassInfo(), JavaFieldActor<jobject>::getInstance(field));
 )
+ */

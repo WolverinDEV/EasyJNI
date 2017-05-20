@@ -92,6 +92,7 @@ class JavaClassInfo {
             for(auto it = methods.begin(); it != methods.end(); it++)
                 if(dynamic_cast<JavaMethodeInfoImpl<T, Args...>*>(*it) && EasyJNI::Helpers::getMethodeName(*it).compare(name) == 0)
                     return dynamic_cast<JavaMethodeInfoImpl<T, Args...>*>(*it);
+            EasyJNI_debug("Cant find requested methode '"+name+"'\n");
             return nullptr;
         }
 
@@ -119,7 +120,7 @@ class JavaClass {
         ~JavaClass(){
             if(javaInstance){
                 //cout << "Deleting cls instance!" << endl;
-                EasyJNI::Utils::getJNIEnvAttach()->DeleteWeakGlobalRef(javaInstance);
+                EasyJNI::Utils::getJNIEnvAttach()->DeleteGlobalRef(javaInstance);
             }
         }
 };
