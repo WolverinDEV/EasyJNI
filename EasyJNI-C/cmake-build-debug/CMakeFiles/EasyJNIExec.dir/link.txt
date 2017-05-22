@@ -1,1 +1,0 @@
-/usr/bin/c++    -std=c++11 -fpermissive -g   CMakeFiles/EasyJNIExec.dir/main.cpp.o CMakeFiles/EasyJNIExec.dir/include/class/JavaClassInfo.cpp.o CMakeFiles/EasyJNIExec.dir/include/class/JavaField.cpp.o CMakeFiles/EasyJNIExec.dir/include/class/JavaMethode.cpp.o CMakeFiles/EasyJNIExec.dir/include/Utils.cpp.o  -o EasyJNIExec 

@@ -1,1 +1,0 @@
-/usr/bin/c++  -fPIC  -std=c++11 -fpermissive -g  -shared -Wl,-soname,libEasyJNI.so -o libEasyJNI.so CMakeFiles/EasyJNI.dir/main.cpp.o CMakeFiles/EasyJNI.dir/include/class/JavaClassInfo.cpp.o CMakeFiles/EasyJNI.dir/include/class/JavaField.cpp.o CMakeFiles/EasyJNI.dir/include/class/JavaMethode.cpp.o CMakeFiles/EasyJNI.dir/include/Utils.cpp.o 
